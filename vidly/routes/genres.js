@@ -1,8 +1,11 @@
 import express from "express"
 import { Genre, validateGenre } from "../models/genre.js";
+import auth from "../middlewares/auth.js";
+import admin from "../middlewares/admin.js";
 
 
 const router = express.Router();
+
 
 router.get('/', async (req, res)=>{
     const genres = await Genre.find().sort('name');
@@ -32,7 +35,7 @@ router.put('/:id', async (req, res)=>{
     res.send(genre);
 })
 
-router.post('/', async (req, res)=>{
+router.post('/', auth, async (req, res)=>{
     const error = validateGenre(req.body);
     
     if(error) return res.status(400).send(error.details[0].message);
@@ -59,7 +62,7 @@ router.post('/', async (req, res)=>{
     // res.send(genre);
 })
 
-router.delete('/:id', async(req, res) => {
+router.delete('/:id', [auth, admin], async(req, res) => {
     const genre = await Genre.findByIdAndDelete(req.params.id);
 
     if(!genre) return res.status(404).send("Genre is not found !")

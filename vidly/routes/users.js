@@ -2,13 +2,26 @@ import express from "express";
 import { User, validateUser } from "../models/user.js";
 // import { lt } from "lodash";
 import _ from 'lodash'
+import bcrypt from 'bcrypt'
+import config  from 'config'
+import jwt from 'jsonwebtoken'
+import auth from "../middlewares/auth.js";
+
 
 const router = express.Router();
+
+
+router.get('/me', auth, async (req, res)=>{
+    const user = await User.findById(req.user._id).select('-password');
+    res.send(user);
+})
+
 
 router.get('/', async (req, res) => {
     const users = await User.find().sort('name');
     res.send(users);
 });
+
 
 router.post('/', async (req, res) => {
     const  error  = validateUser(req.body);
@@ -17,18 +30,16 @@ router.post('/', async (req, res) => {
     let user = await User.findOne({ email: req.body.email });
     if (user) return res.status(400).send('User is already registered!');
 
-    user = new User(_.pick(req.body,['name', 'email', 'password']));
+    user = new User(_.pick(req.body,['name', 'email', 'password', 'isAdmin']));
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(user.password, salt);
 
-    try {
-        const result = await user.save();
-        console.log(result);
-        res.send(_.pick(user, ['name', 'email']));
-    } catch (err) {
-        for (let field in err.errors) {
-            console.log(err.errors[field].message);
-        }
-        res.status(500).send("Something went wrong.");
-    }
+    const result = await user.save();
+    console.log(_.pick(result, ['name', 'email']));
+    const token = user.generateAuthToken();
+
+    res.header('x-auth-token', token).send(_.pick(user, ['name', 'email']));
+
 });
 
 export { router as users };
