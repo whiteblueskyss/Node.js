@@ -9,7 +9,11 @@ import Joi from 'joi';
 // import JoiObjectId from 'joi-objectid';
 import { users } from './routes/users.js';
 import { auth } from './routes/auth.js';
+import error from "./middlewares/error.js";
 
+import 'express-async-errors'; // this will handle all async errors. no nedd to call another function that i have done in my code genres.js. 4
+
+//winston. another npm package. that will  handle databse erorrs. 
 
 if (!config.get('jwtPrivateKey')) {
     console.log("Fatal Error: jwt token is not defined.");
@@ -32,6 +36,9 @@ app.use('/api/movies', movies);
 app.use('/api/rentals', rentals);
 app.use('/api/users', users);
 app.use('/api/auth', auth);
+
+
+app.use(error)
 
 
 const port = process.env.PORT || 3000;
